@@ -17,21 +17,27 @@
 (macrolet ((define-fetcher (bitsize signedp big-endian-p)
              (let ((ref-name (byte-ref-fun-name bitsize signedp big-endian-p))
                    (bytes (truncate bitsize 8)))
-               `(defun ,ref-name (vector index)
-                  (declare (type octet-vector vector))
-                  (declare (type (integer 0 ,(- array-dimension-limit bytes)) index))
-                  (multiple-value-bind (vector start end)
-                      (array-data-and-offsets vector index (+ index ,bytes))
-                     #+sbcl (declare (optimize (sb-c::insert-array-bounds-checks 0)))
-                     (declare (type (integer 0 ,(- array-dimension-limit bytes)) start))
-                    (declare (ignore end))
-                    ,(ref-form 'vector 'start bytes signedp big-endian-p)))))
+               `(progn
+                  #+mezzano (declaim (inline ,ref-name))
+                  (#+mezzano mezzano.internals::defun* #-mezzano defun ,ref-name (vector index)
+                    (declare (type octet-vector vector))
+                    (declare (type (integer 0 ,(- array-dimension-limit bytes)) index))
+                    (multiple-value-bind (vector start end)
+                        (array-data-and-offsets vector index (+ index ,bytes))
+                      #+sbcl (declare (optimize (sb-c::insert-array-bounds-checks 0)))
+                      (declare (type (integer 0 ,(- array-dimension-limit bytes)) start))
+                      (declare (ignore end))
+                      #-mezzano
+                      ,(ref-form 'vector 'start bytes signedp big-endian-p)
+                      #+mezzano
+                      (,(find-symbol (string ref-name) :mezzano.extensions) vector start))))))
            (define-storer (bitsize signedp big-endian-p)
              (let ((ref-name (byte-ref-fun-name bitsize signedp big-endian-p))
                    (set-name (byte-set-fun-name bitsize signedp big-endian-p))
                    (bytes (truncate bitsize 8)))
                `(progn
-                 (defun ,set-name (vector index value)
+                  #+mezzano (declaim (inline ,set-name))
+                 (#+mezzano mezzano.internals::defun* #-mezzano defun ,set-name (vector index value)
                    (declare (type octet-vector vector))
                    (declare (type (integer 0 ,(- array-dimension-limit bytes)) index))
                    (declare (type (,(if signedp
@@ -42,7 +48,10 @@
                      #+sbcl (declare (optimize (sb-c::insert-array-bounds-checks 0)))
                      (declare (type (integer 0 ,(- array-dimension-limit bytes)) start))
                      (declare (ignore end))
-                     ,(set-form 'vector 'start 'value bytes big-endian-p)))
+                     #-mezzano
+                     ,(set-form 'vector 'start 'value bytes big-endian-p)
+                     #+mezzano
+                     (setf (,(find-symbol (string ref-name) :mezzano.extensions) vector start) value)))
                  (defsetf ,ref-name ,set-name))))
            (define-fetchers-and-storers (bitsize)
                (loop for i from 0 below 4
@@ -59,6 +68,7 @@
   (error "not supported"))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-single-ref/be))
+#+mezzano (declaim (inline ieee-single-ref/be))
 (defun ieee-single-ref/be (vector index)
   (declare (ignorable vector index))
   #+abcl
@@ -86,6 +96,7 @@
   (not-supported))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-single-sef/be))
+#+mezzano (declaim (inline ieee-single-set/be))
 (defun ieee-single-set/be (vector index value)
   (declare (ignorable value vector index))
   #+abcl
@@ -125,6 +136,7 @@
 (defsetf ieee-single-ref/be ieee-single-set/be)
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-single-ref/le))
+#+mezzano (declaim (inline ieee-single-ref/le))
 (defun ieee-single-ref/le (vector index)
   (declare (ignorable vector index))
   #+abcl
@@ -152,6 +164,7 @@
   (not-supported))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-single-set/le))
+#+mezzano (declaim (inline ieee-single-set/le))
 (defun ieee-single-set/le (vector index value)
   (declare (ignorable value vector index))
   #+abcl
@@ -191,6 +204,7 @@
 (defsetf ieee-single-ref/le ieee-single-set/le)
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-double-ref/be))
+#+mezzano (declaim (inline ieee-double-ref/be))
 (defun ieee-double-ref/be (vector index)
   (declare (ignorable vector index))
   #+abcl
@@ -221,6 +235,7 @@
   (not-supported))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-double-set/be))
+#+mezzano (declaim (inline ieee-double-set/be))
 (defun ieee-double-set/be (vector index value)
   (declare (ignorable value vector index))
   #+abcl
@@ -259,6 +274,7 @@
 (defsetf ieee-double-ref/be ieee-double-set/be)
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-double-ref/le))
+#+mezzano (declaim (inline ieee-double-ref/le))
 (defun ieee-double-ref/le (vector index)
   (declare (ignorable vector index))
   #+abcl
@@ -289,6 +305,7 @@
   (not-supported))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-double-set/le))
+#+mezzano (declaim (inline ieee-double-set/le))
 (defun ieee-double-set/le (vector index value)
   (declare (ignorable value vector index))
   #+abcl
