@@ -78,9 +78,11 @@
     (declare (dynamic-extent v))
     (setf (sys:typed-aref '(unsigned-byte 32) v 0) ub)
     (sys:typed-aref 'single-float v 0))
+  #+mezzano
+  (mezzano.extensions:ieee-binary32-to-single-float (ub32ref/be vector index))
   #+sbcl
   (sb-kernel:make-single-float (sb32ref/be vector index))
-  #-(or abcl allegro ccl cmu lispworks sbcl)
+  #-(or abcl allegro ccl cmu lispworks mezzano sbcl)
   (not-supported))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-single-sef/be))
@@ -110,11 +112,15 @@
     (setf (sys:typed-aref 'single-float v 0) value)
     (setf (ub32ref/be vector index) (sys:typed-aref '(unsigned-byte 32) v 0))
     value)
+  #+mezzano
+  (progn
+    (setf (ub32ref/be vector index) (mezzano.extensions:single-float-to-ieee-binary32 value))
+    value)
   #+sbcl
   (progn
     (setf (sb32ref/be vector index) (sb-kernel:single-float-bits value))
     value)
-  #-(or abcl allegro ccl cmu lispworks sbcl)
+  #-(or abcl allegro ccl cmu lispworks mezzano sbcl)
   (not-supported))
 (defsetf ieee-single-ref/be ieee-single-set/be)
 
@@ -138,9 +144,11 @@
     (declare (dynamic-extent v))
     (setf (sys:typed-aref '(unsigned-byte 32) v 0) ub)
     (sys:typed-aref 'single-float v 0))
+  #+mezzano
+  (mezzano.extensions:ieee-binary32-to-single-float (ub32ref/le vector index))
   #+sbcl
   (sb-kernel:make-single-float (sb32ref/le vector index))
-  #-(or abcl allegro ccl cmu lispworks sbcl)
+  #-(or abcl allegro ccl cmu lispworks mezzano sbcl)
   (not-supported))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-single-set/le))
@@ -170,11 +178,15 @@
     (setf (sys:typed-aref 'single-float v 0) value)
     (setf (ub32ref/le vector index) (sys:typed-aref '(unsigned-byte 32) v 0))
     value)
+  #+mezzano
+  (progn
+    (setf (ub32ref/le vector index) (mezzano.extensions:single-float-to-ieee-binary32 value))
+    value)
   #+sbcl
   (progn
     (setf (sb32ref/le vector index) (sb-kernel:single-float-bits value))
     value)
-  #-(or abcl allegro ccl cmu lispworks sbcl)
+  #-(or abcl allegro ccl cmu lispworks mezzano sbcl)
   (not-supported))
 (defsetf ieee-single-ref/le ieee-single-set/le)
 
@@ -199,11 +211,13 @@
   (let ((upper (sb32ref/be vector index))
         (lower (ub32ref/be vector (+ index 4))))
     (kernel:make-double-float upper lower))
+  #+mezzano
+  (mezzano.extensions:ieee-binary64-to-double-float (ub64ref/be vector index))
   #+sbcl
   (let ((upper (sb32ref/be vector index))
         (lower (ub32ref/be vector (+ index 4))))
     (sb-kernel:make-double-float upper lower))
-  #-(or abcl allegro ccl cmu sbcl)
+  #-(or abcl allegro ccl cmu mezzano sbcl)
   (not-supported))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-double-set/be))
@@ -231,12 +245,16 @@
     (setf (sb32ref/be vector index) (kernel:double-float-high-bits value)
           (ub32ref/be vector (+ index 4)) (kernel:double-float-low-bits value))
     value)
+  #+mezzano
+  (progn
+    (setf (ub64ref/be vector index) (mezzano.extensions:double-float-to-ieee-binary64 value))
+    value)
   #+sbcl
   (progn
     (setf (sb32ref/be vector index) (sb-kernel:double-float-high-bits value)
           (ub32ref/be vector (+ index 4)) (sb-kernel:double-float-low-bits value))
     value)
-  #-(or abcl allegro ccl cmu sbcl)
+  #-(or abcl allegro ccl cmu mezzano sbcl)
   (not-supported))
 (defsetf ieee-double-ref/be ieee-double-set/be)
 
@@ -261,11 +279,13 @@
   (let ((lower (ub32ref/le vector index))
         (upper (sb32ref/le vector (+ index 4))))
     (kernel:make-double-float upper lower))
+  #+mezzano
+  (mezzano.extensions:ieee-binary64-to-double-float (ub64ref/le vector index))
   #+sbcl
   (let ((lower (ub32ref/le vector index))
         (upper (sb32ref/le vector (+ index 4))))
     (sb-kernel:make-double-float upper lower))
-  #-(or abcl allegro ccl cmu sbcl)
+  #-(or abcl allegro ccl cmu mezzano sbcl)
   (not-supported))
 
 #+sbcl (declaim (sb-ext:maybe-inline ieee-double-set/le))
@@ -293,11 +313,15 @@
     (setf (ub32ref/le vector index) (kernel:double-float-low-bits value)
           (sb32ref/le vector (+ index 4)) (kernel:double-float-high-bits value))
     value)
+  #+mezzano
+  (progn
+    (setf (ub64ref/le vector index) (mezzano.extensions:double-float-to-ieee-binary64 value))
+    value)
   #+sbcl
   (progn
     (setf (ub32ref/le vector index) (sb-kernel:double-float-low-bits value)
           (sb32ref/le vector (+ index 4)) (sb-kernel:double-float-high-bits value))
     value)
-  #-(or abcl allegro ccl cmu sbcl)
+  #-(or abcl allegro ccl cmu mezzano sbcl)
   (not-supported))
 (defsetf ieee-double-ref/le ieee-double-set/le)
